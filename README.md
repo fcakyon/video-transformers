@@ -101,13 +101,13 @@ datamodule = VideoDataModule(
     train_dataset_multiplier=1,
     batch_size=4,
     num_workers=4,
-    video_timesteps=8,
-    video_crop_size=224,
-    video_means=backbone.mean,
-    video_stds=backbone.std,
-    video_min_short_side_scale=256,
-    video_max_short_side_scale=320,
-    video_horizontal_flip_p=0.5,
+    num_timesteps=8,
+    preprocess_input_size=224,
+    preprocess_means=backbone.mean,
+    preprocess_stds=backbone.std,
+    preprocess_min_short_side_scale=256,
+    preprocess_max_short_side_scale=320,
+    preprocess_horizontal_flip_p=0.5,
 )
 
 head = LinearHead(hidden_size=neck.num_features, num_classes=datamodule.num_classes)
@@ -143,13 +143,13 @@ datamodule = VideoDataModule(
     train_dataset_multiplier=1,
     batch_size=4,
     num_workers=4,
-    video_timesteps=8,
-    video_crop_size=224,
-    video_means=backbone.mean,
-    video_stds=backbone.std,
-    video_min_short_side_scale=256,
-    video_max_short_side_scale=320,
-    video_horizontal_flip_p=0.5,
+    num_timesteps=8,
+    preprocess_input_size=224,
+    preprocess_means=backbone.mean,
+    preprocess_stds=backbone.std,
+    preprocess_min_short_side_scale=256,
+    preprocess_max_short_side_scale=320,
+    preprocess_horizontal_flip_p=0.5,
 )
 
 head = LinearHead(hidden_size=neck.num_features, num_classes=datamodule.num_classes)
