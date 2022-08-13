@@ -227,7 +227,7 @@ class BaseTrainer:
                 "preprocess_stds": data_config["preprocess_config"]["stds"],
                 "preprocess_min_short_side_scale": data_config["preprocess_config"]["min_short_side_scale"],
                 "preprocess_input_size": data_config["preprocess_config"]["input_size"],
-                "num_timesteps": data_config["num_timesteps"],
+                "num_timesteps": data_config["preprocess_config"]["timesteps"],
                 "labels": data_config["labels"],
             }
         )
@@ -298,9 +298,12 @@ class BaseTrainer:
         return val_loss
 
     def fit(self):
-        logger.info("Calculating training & validation sizes for better experience...")
+        self.accelerator.print("Calculating training & validation sizes for better experience...")
         len_train_dataloader = len(self.train_dataloader)
         len_val_dataloader = len(self.val_dataloader)
+
+        self.accelerator.print(f"Trainable parameteres: {self.model.num_trainable_params}")
+        self.accelerator.print(f"Total parameteres: {self.model.num_total_params}")
 
         for epoch in range(self.starting_epoch, self.hparams["max_epochs"]):
             self._log_last_lr()

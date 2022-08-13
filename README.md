@@ -78,6 +78,7 @@ val_root
 - Fine-tune CVT (from HuggingFace) + Transformer based video classifier:
 
 ```python
+from torch.optim import AdamW
 from video_transformers import TimeDistributed, VideoClassificationModel
 from video_transformers.backbones.transformers import TransformersBackbone
 from video_transformers.data import VideoDataModule
@@ -93,6 +94,7 @@ neck = TransformerNeck(
     transformer_enc_num_layers=2,
     dropout_p=0.1,
 )
+optimizer = AdamW(model.parameters(), lr=1e-4)
 
 datamodule = VideoDataModule(
     train_root=".../ucf6/train",
@@ -152,7 +154,7 @@ datamodule = VideoDataModule(
     preprocess_horizontal_flip_p=0.5,
 )
 
-head = LinearHead(hidden_size=neck.num_features, num_classes=datamodule.num_classes)
+head = LinearHead(hidden_size=neck.hidden_size, num_classes=datamodule.num_classes)
 model = VideoClassificationModel(backbone, head, neck)
 
 Trainer = trainer_factory("single_label_classification")
