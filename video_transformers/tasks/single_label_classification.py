@@ -55,7 +55,8 @@ class SingleLabelClassificationTaskMixin(TaskMixin):
         inputs = batch["video"]
         labels = batch["label"]
         outputs = self.model(inputs)
-        predictions = outputs.argmax(dim=-1)
+        propabilities = torch.nn.functional.softmax(outputs, dim=1)
+        predictions = propabilities.argmax(dim=-1)
         # gather all predictions and targets
         all_predictions = self.accelerator.gather(predictions)
         all_labels = self.accelerator.gather(labels)
@@ -84,7 +85,8 @@ class SingleLabelClassificationTaskMixin(TaskMixin):
         labels = batch["label"]
         with torch.no_grad():
             outputs = self.model(inputs)
-        predictions = outputs.argmax(dim=-1)
+        propabilities = torch.nn.functional.softmax(outputs, dim=1)
+        predictions = propabilities.argmax(dim=-1)
         # gather all predictions and targets
         all_predictions = self.accelerator.gather(predictions)
         all_labels = self.accelerator.gather(labels)
