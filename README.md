@@ -119,6 +119,7 @@ Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
     datamodule,
     model,
+    optimizer=optimizer
 )
 
 trainer.fit()
