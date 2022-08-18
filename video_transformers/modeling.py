@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Dict, List, Union
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import torch
 from huggingface_hub.constants import PYTORCH_WEIGHTS_NAME
@@ -9,7 +10,7 @@ from huggingface_hub.hub_mixin import PyTorchModelHubMixin
 from torch import nn
 
 import video_transformers.backbones.base
-from video_transformers.deployment.onnx import export
+import video_transformers.deployment.onnx
 from video_transformers.heads import LinearHead
 from video_transformers.utils.torch import get_num_total_params, get_num_trainable_params
 
@@ -129,9 +130,9 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
             backbone=backbone,
             head=head,
             neck=neck,
-            timesteps=config["num_timesteps"],
-            input_size=config["preprocess_input_size"],
+            preprocessor_config=config["preprocessor"],
             labels=config["labels"],
+            task=config["task"],
         )
 
     @classmethod
@@ -180,28 +181,29 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
         backbone: Union[TimeDistributed, video_transformers.backbones.base.Backbone],
         head: LinearHead,
         neck=None,
-        timesteps: int = None,
-        input_size: int = None,
         labels: List[str] = None,
+        preprocessor_config: Dict = None,
+        task: str = None,
     ):
         """
         Args:
             backbone: Backbone model.
             head: Head model.
             neck: Neck model.
-            timesteps: Number of input timesteps (required for onnx export).
-            input_size: Input size of model (required for onnx export).
-            labels: List of labels (required for onnx export).
+            labels: List of labels (required for onnx export and predict).
+            preprocessor_config: Preprocessor config (required for onnx export and predict).
+            task: Task name (required for predict).
         """
         super().__init__()
         self.backbone = backbone
         self.neck = neck
         self.head = head
 
-        # required for exporting to ONNX
-        self.timesteps = timesteps
-        self.input_size = input_size
+        # required for exporting to ONNX and predict
+        self.preprocessor_config = preprocessor_config
         self.labels = labels
+
+        self.task = task
 
     @property
     def num_features(self):
@@ -238,6 +240,7 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
     @property
     def config(self):
         config = {}
+        config["task"] = self.task
         config["backbone"] = self.backbone.config
         config["head"] = self.head.config
         if self.neck is not None:
@@ -261,12 +264,18 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
             export_filename: Filename to export model to.
         """
 
-        export(self, quantize, opset_version, export_dir, export_filename)
+        video_transformers.deployment.onnx.export(self, quantize, opset_version, export_dir, export_filename)
 
     @property
     def example_input_array(self):
-        if self.timesteps and self.input_size:
-            return torch.rand(1, 3, self.timesteps, self.input_size, self.input_size)
+        if self.preprocessor_config:
+            return torch.rand(
+                1,
+                3,
+                self.preprocessor_config["num_timesteps"],
+                self.preprocessor_config["input_size"],
+                self.preprocessor_config["input_size"],
+            )
         else:
             return None
 

@@ -45,7 +45,7 @@ def export(
 
         from onnxruntime.quantization import quantize_dynamic
 
-        export_filename = Path(export_path).stem + f"_quantize.{Path(export_path).suffix}"
+        export_filename = Path(export_path).stem + f"_quantized.{Path(export_path).suffix}"
 
         target_model_path = Path(export_path).parent / export_filename
 

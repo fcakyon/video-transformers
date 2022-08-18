@@ -34,6 +34,7 @@ class SingleLabelClassificationTaskMixin(TaskMixin):
         self._val_metrics = Combine(["f1", "precision", "recall"])
         self._last_train_result = None
         self._last_val_result = None
+        self.task = "single_label_classification"
 
     @property
     def train_metrics(self):
@@ -55,8 +56,8 @@ class SingleLabelClassificationTaskMixin(TaskMixin):
         inputs = batch["video"]
         labels = batch["label"]
         outputs = self.model(inputs)
-        propabilities = torch.nn.functional.softmax(outputs, dim=1)
-        predictions = propabilities.argmax(dim=-1)
+        probabilities = torch.nn.functional.softmax(outputs, dim=1)
+        predictions = probabilities.argmax(dim=-1)
         # gather all predictions and targets
         all_predictions = self.accelerator.gather(predictions)
         all_labels = self.accelerator.gather(labels)
@@ -83,10 +84,9 @@ class SingleLabelClassificationTaskMixin(TaskMixin):
     def validation_step(self, batch):
         inputs = batch["video"]
         labels = batch["label"]
-        with torch.no_grad():
-            outputs = self.model(inputs)
-        propabilities = torch.nn.functional.softmax(outputs, dim=1)
-        predictions = propabilities.argmax(dim=-1)
+        outputs = self.model(inputs)
+        probabilities = torch.nn.functional.softmax(outputs, dim=1)
+        predictions = probabilities.argmax(dim=-1)
         # gather all predictions and targets
         all_predictions = self.accelerator.gather(predictions)
         all_labels = self.accelerator.gather(labels)

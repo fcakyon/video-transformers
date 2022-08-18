@@ -14,15 +14,15 @@ from pytorchvideo.transforms import (
 from torch.utils.data import DataLoader
 from torchvision.transforms import CenterCrop, Compose, Lambda, RandomCrop, RandomHorizontalFlip
 
-from video_transformers.utils.dataset import LabeledVideoDataset, LabeledVideoPaths
+from video_transformers.pytorchvideo_wrapper.data.labeled_video_paths import LabeledVideoDataset, LabeledVideoPaths
 from video_transformers.utils.extra import class_to_config
 
 logger = get_logger(__name__)
 
 
-class VideoPreprocess:
+class VideoPreprocessor:
     @classmethod
-    def from_config(cls, config: Dict, **kwargs) -> "VideoPreprocess":
+    def from_config(cls, config: Dict, **kwargs) -> "VideoPreprocessor":
         """
         Creates an instance of the class from a config.
 
@@ -36,25 +36,27 @@ class VideoPreprocess:
 
     def __init__(
         self,
-        timesteps: int = 8,
+        num_timesteps: int = 8,
         input_size: int = 224,
         means: Tuple[float] = (0.45, 0.45, 0.45),
         stds: Tuple[float] = (0.225, 0.225, 0.225),
-        min_short_side_scale: int = 256,
-        max_short_side_scale: int = 320,
+        min_short_side: int = 256,
+        max_short_side: int = 320,
         horizontal_flip_p: float = 0.5,
+        clip_duration: int = 1,
     ):
         """
         Creates preprocess transforms.
 
         Args:
-            timesteps: number of frames in a video clip
+            num_timesteps: number of frames in a video clip
             input_size: model input isze
             means: mean of the video clip
             stds: standard deviation of the video clip
             min_short_side_scale: minimum short side of the video clip
             max_short_side_scale: maximum short side of the video clip
             horizontal_flip_p: probability of horizontal flip
+            clip_duration: duration of each video clip
 
         Properties:
             train_transform: transforms for training
@@ -65,23 +67,24 @@ class VideoPreprocess:
         """
         super().__init__()
 
-        self.timesteps = timesteps
+        self.num_timesteps = num_timesteps
         self.input_size = input_size
         self.means = means
         self.stds = stds
-        self.min_short_side_scale = min_short_side_scale
-        self.max_short_side_scale = max_short_side_scale
+        self.min_short_side = min_short_side
+        self.max_short_side = max_short_side
         self.horizontal_flip_p = horizontal_flip_p
+        self.clip_duration = clip_duration
 
         # Transforms applied to train dataset.
         self.train_video_transform = Compose(
             [
-                UniformTemporalSubsample(self.timesteps),
+                UniformTemporalSubsample(self.num_timesteps),
                 Lambda(lambda x: x / 255.0),
                 Normalize(self.means, self.stds),
                 RandomShortSideScale(
-                    min_size=self.min_short_side_scale,
-                    max_size=self.max_short_side_scale,
+                    min_size=self.min_short_side,
+                    max_size=self.max_short_side,
                 ),
                 RandomCrop(self.input_size),
                 RandomHorizontalFlip(p=self.horizontal_flip_p),
@@ -93,10 +96,10 @@ class VideoPreprocess:
         # Transforms applied on val dataset or for inference.
         self.val_video_transform = Compose(
             [
-                UniformTemporalSubsample(self.timesteps),
+                UniformTemporalSubsample(self.num_timesteps),
                 Lambda(lambda x: x / 255.0),
                 Normalize(self.means, self.stds),
-                ShortSideScale(self.min_short_side_scale),
+                ShortSideScale(self.min_short_side),
                 CenterCrop(self.input_size),
             ]
         )
@@ -109,16 +112,16 @@ class VideoDataModule:
         train_root: str,
         val_root: str,
         test_root: str = None,
-        clip_duration: int = 2,
         train_dataset_multiplier: int = 1,
         batch_size: int = 4,
         num_workers: int = 4,
         num_timesteps: int = 8,
         preprocess_input_size: int = 224,
+        preprocess_clip_duration: int = 1,
         preprocess_means: Tuple[float] = (0.45, 0.45, 0.45),
         preprocess_stds: Tuple[float] = (0.225, 0.225, 0.225),
-        preprocess_min_short_side_scale: int = 256,
-        preprocess_max_short_side_scale: int = 320,
+        preprocess_min_short_side: int = 256,
+        preprocess_max_short_side: int = 320,
         preprocess_horizontal_flip_p: float = 0.5,
     ):
         """
@@ -169,25 +172,26 @@ class VideoDataModule:
                 Mean pixel value to be used during normalization.
             preprocess_stds: Tuple[float]
                 Standard deviation pixel value to be used during normalization.
-            preprocess_min_short_side_scale: int
+            preprocess_min_short_side: int
                 Minimum value of the short side of the clip after resizing.
-            preprocess_max_short_side_scale: int
+            preprocess_max_short_side: int
                 Maximum value of the short side of the clip after resizing.
             preprocess_horizontal_flip_p: float
                 Probability of horizontal flip.
         """
-        self.preprocess_config = {
-            "timesteps": num_timesteps,
+        self.preprocessor_config = {
+            "num_timesteps": num_timesteps,
             "input_size": preprocess_input_size,
             "means": preprocess_means,
             "stds": preprocess_stds,
-            "min_short_side_scale": preprocess_min_short_side_scale,
-            "max_short_side_scale": preprocess_max_short_side_scale,
+            "min_short_side": preprocess_min_short_side,
+            "max_short_side": preprocess_max_short_side,
             "horizontal_flip_p": preprocess_horizontal_flip_p,
+            "clip_duration": preprocess_clip_duration,
         }
-        self.preprocess = VideoPreprocess.from_config(self.preprocess_config)
+        self.preprocessor = VideoPreprocessor.from_config(self.preprocessor_config)
 
-        self.dataloader_config = {"batch_size": batch_size, "num_workers": num_workers, "clip_duration": clip_duration}
+        self.dataloader_config = {"batch_size": batch_size, "num_workers": num_workers}
 
         self.train_root = train_root
         self.val_root = val_root
@@ -211,12 +215,12 @@ class VideoDataModule:
         labeled_video_paths = LabeledVideoPaths.from_path(self.train_root)
         labeled_video_paths.path_prefix = ""
         video_sampler = torch.utils.data.RandomSampler
-        clip_sampler = pytorchvideo.data.make_clip_sampler("random", self.dataloader_config["clip_duration"])
+        clip_sampler = pytorchvideo.data.make_clip_sampler("random", self.preprocessor_config["clip_duration"])
         dataset = LabeledVideoDataset(
             labeled_video_paths,
             clip_sampler,
             video_sampler,
-            self.preprocess.train_transform,
+            self.preprocessor.train_transform,
             decode_audio=False,
             decoder="pyav",
             dataset_multiplier=self.train_dataset_multiplier,
@@ -233,12 +237,15 @@ class VideoDataModule:
         labeled_video_paths = LabeledVideoPaths.from_path(self.val_root)
         labeled_video_paths.path_prefix = ""
         video_sampler = torch.utils.data.SequentialSampler
-        clip_sampler = pytorchvideo.data.make_clip_sampler("uniform", self.dataloader_config["clip_duration"])
+        clip_sampler = pytorchvideo.data.clip_sampling.UniformClipSamplerTruncateFromStart(
+            clip_duration=self.preprocessor_config["clip_duration"],
+            truncation_duration=self.preprocessor_config["clip_duration"],
+        )
         dataset = LabeledVideoDataset(
             labeled_video_paths,
             clip_sampler,
             video_sampler,
-            self.preprocess.val_transform,
+            self.preprocessor.val_transform,
             decode_audio=False,
             decoder="pyav",
         )
@@ -253,12 +260,15 @@ class VideoDataModule:
         labeled_video_paths = LabeledVideoPaths.from_path(self.test_root)
         labeled_video_paths.path_prefix = ""
         video_sampler = torch.utils.data.SequentialSampler
-        clip_sampler = pytorchvideo.data.make_clip_sampler("uniform", self.dataloader_config["clip_duration"])
+        clip_sampler = pytorchvideo.data.clip_sampling.UniformClipSamplerTruncateFromStart(
+            clip_duration=self.preprocessor_config["clip_duration"],
+            truncation_duration=self.preprocessor_config["clip_duration"],
+        )
         dataset = LabeledVideoDataset(
             labeled_video_paths,
             clip_sampler,
             video_sampler,
-            self.preprocess.val_transform,
+            self.preprocessor.val_transform,
             decode_audio=False,
             decoder="pyav",
         )
