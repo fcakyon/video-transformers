@@ -28,12 +28,15 @@ class TestOnnx(unittest.TestCase):
                 "transformer_enc_num_layers": 2,
                 "return_mean": True,
             },
-            "preprocess_means": [0.485, 0.456, 0.406],
-            "preprocess_stds": [0.229, 0.224, 0.225],
-            "preprocess_min_short_side_scale": 256,
-            "preprocess_input_size": 224,
-            "num_timesteps": 8,
+            "preprocessor": {
+                "means": [0.485, 0.456, 0.406],
+                "stds": [0.229, 0.224, 0.225],
+                "min_short_side": 256,
+                "input_size": 224,
+                "num_timesteps": 8,
+            },
             "labels": ["BodyWeightSquats", "JumpRope", "Lunges", "PullUps", "PushUps", "WallPushups"],
+            "task": "single_label_classification",
         }
 
         model = VideoClassificationModel.from_config(config)
@@ -66,12 +69,15 @@ class TestOnnx(unittest.TestCase):
                 "transformer_enc_num_layers": 2,
                 "return_mean": True,
             },
-            "preprocess_means": [0.485, 0.456, 0.406],
-            "preprocess_stds": [0.229, 0.224, 0.225],
-            "preprocess_min_short_side_scale": 256,
-            "preprocess_input_size": 224,
-            "num_timesteps": 8,
+            "preprocessor": {
+                "means": [0.485, 0.456, 0.406],
+                "stds": [0.229, 0.224, 0.225],
+                "min_short_side": 256,
+                "input_size": 224,
+                "num_timesteps": 8,
+            },
             "labels": ["BodyWeightSquats", "JumpRope", "Lunges", "PullUps", "PushUps", "WallPushups"],
+            "task": "single_label_classification",
         }
 
         model = VideoClassificationModel.from_config(config)

@@ -1,7 +1,7 @@
 from typing import Dict, Union
 
 from video_transformers.backbones.base import Backbone
-from video_transformers.modules import TimeDistributed
+from video_transformers.modeling import TimeDistributed
 
 
 class AutoBackbone:
@@ -27,7 +27,7 @@ class AutoBackbone:
             raise ValueError(f"Unknown framework {backbone_framework}")
 
         if backbone_type == "2d_backbone":
-            from video_transformers.modules import TimeDistributed
+            from video_transformers.modeling import TimeDistributed
 
             backbone = TimeDistributed(backbone)
         return backbone

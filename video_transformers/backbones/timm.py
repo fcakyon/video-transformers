@@ -3,7 +3,7 @@ from typing import Tuple
 from torch import nn
 
 from video_transformers.backbones.base import Backbone
-from video_transformers.modules import Identity
+from video_transformers.modeling import Identity
 from video_transformers.utils.torch import unfreeze_last_n_stages as unfreeze_last_n_stages_torch
 
 

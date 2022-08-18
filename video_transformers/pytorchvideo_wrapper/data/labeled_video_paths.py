@@ -8,20 +8,81 @@ import os
 import pathlib
 import zipfile
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 import torch
 from iopath.common.file_io import g_pathmgr
 from pytorchvideo.data.clip_sampling import ClipSampler
 from pytorchvideo.data.labeled_video_dataset import LabeledVideoDataset as LabeledVideoDataset_
 from pytorchvideo.data.labeled_video_paths import LabeledVideoPaths as LabeledVideoPaths_
-from pytorchvideo.data.labeled_video_paths import make_dataset_from_video_folders
 from pytorchvideo.data.video import VideoPathHandler
-from torchvision.datasets.folder import make_dataset
+from torchvision.datasets.folder import find_classes, has_file_allowed_extension, make_dataset
 
 from video_transformers.utils.file import download_file
 
 logger = logging.getLogger(__name__)
+
+
+def make_dataset_from_video_folders(
+    directory: str,
+    class_to_idx: Optional[Dict[str, int]] = None,
+    extensions: Optional[Union[str, Tuple[str, ...]]] = None,
+    is_valid_file: Optional[Callable[[str], bool]] = None,
+) -> List[Tuple[str, int]]:
+    """Generates a list of samples of a form (path_to_sample, class).
+
+    See :class:`DatasetFolder` for details.
+
+    Note: The class_to_idx parameter is here optional and will use the logic of the ``find_classes`` function
+    by default.
+    """
+    directory = os.path.expanduser(directory)
+
+    if class_to_idx is None:
+        _, class_to_idx = find_classes(directory)
+    elif not class_to_idx:
+        raise ValueError("'class_to_index' must have at least one entry to collect any samples.")
+
+    both_none = extensions is None and is_valid_file is None
+    both_something = extensions is not None and is_valid_file is not None
+    if both_none or both_something:
+        raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
+
+    if extensions is not None:
+
+        def is_valid_folder(x: str) -> bool:
+            if g_pathmgr.ls(x):
+                return has_file_allowed_extension(g_pathmgr.ls(x)[0], extensions)
+            else:
+                return False
+
+    is_valid_file = cast(Callable[[str], bool], is_valid_file)
+
+    instances = []
+    available_classes = set()
+    for target_class in sorted(class_to_idx.keys()):
+        class_index = class_to_idx[target_class]
+        target_dir = os.path.join(directory, target_class)
+        if not os.path.isdir(target_dir):
+            continue
+        for root, fnames, _ in sorted(os.walk(target_dir, followlinks=True)):
+            for fname in sorted(fnames):
+                path = os.path.join(root, fname)
+                if is_valid_folder(path):
+                    item = path, class_index
+                    instances.append(item)
+
+                    if target_class not in available_classes:
+                        available_classes.add(target_class)
+
+    empty_classes = set(class_to_idx.keys()) - available_classes
+    if empty_classes:
+        msg = f"Found no valid file for the classes {', '.join(sorted(empty_classes))}. "
+        if extensions is not None:
+            msg += f"Supported extensions are: {extensions if isinstance(extensions, str) else ', '.join(extensions)}"
+        raise FileNotFoundError(msg)
+
+    return instances
 
 
 class LabeledVideoPaths(LabeledVideoPaths_):
@@ -42,8 +103,10 @@ class LabeledVideoPaths(LabeledVideoPaths_):
             file_path (str): The path to the file to be read.
         """
 
-        if g_pathmgr.isfile(data_path):
+        if g_pathmgr.isfile(data_path) and data_path.endswith(".csv"):
             return LabeledVideoPaths.from_csv(data_path)
+        elif g_pathmgr.isfile(data_path) and has_file_allowed_extension(data_path, extensions=("mp4", "avi")):
+            return LabeledVideoPaths.from_video_path(data_path)
         elif g_pathmgr.isdir(data_path):
             class_0 = g_pathmgr.ls(data_path)[0]
             video_0 = g_pathmgr.ls(pathlib.Path(data_path) / class_0)[0]
@@ -54,6 +117,15 @@ class LabeledVideoPaths(LabeledVideoPaths_):
                 return LabeledVideoPaths.from_directory_of_video_folders(data_path)
         else:
             raise FileNotFoundError(f"{data_path} not found.")
+
+    @classmethod
+    def from_video_path(cls, video_path: str) -> LabeledVideoPaths:
+        """
+        Creates a LabeledVideoPaths object from a single video path.
+        Args:
+            video_path (str): The path to the video.
+        """
+        return LabeledVideoPaths([(video_path, -1)])
 
     @classmethod
     def from_directory(cls, dir_path: str) -> LabeledVideoPaths:
@@ -188,6 +260,8 @@ class LabeledVideoDataset(LabeledVideoDataset_):
         self._last_clip_end_time = None
         self.video_path_handler = VideoPathHandler()
 
+        self._len = None
+
     @property
     def labels(self):
         """
@@ -206,12 +280,18 @@ class LabeledVideoDataset(LabeledVideoDataset_):
         return [class_id_to_number[class_id] for class_id in range(max(class_ids) + 1)]
 
     def __len__(self):
+        if self._len is not None:
+            return self._len
+
         if isinstance(self.video_sampler, torch.utils.data.SequentialSampler):
-            return sum([1 for _ in self])
+            # self._len = sum([1 for _ in self])
+            self._len = len(self.video_sampler)
+            return self._len
         elif isinstance(self.video_sampler, torch.utils.data.RandomSampler):
-            return len(self.video_sampler)
+            self._len = len(self.video_sampler)
+            return self._len
         else:
-            raise ValueError(f"Lenght calculation not implemented for sampler: {type(self.video_sampler)}.")
+            raise ValueError(f"Length calculation not implemented for sampler: {type(self.video_sampler)}.")
 
 
 def labeled_video_dataset(

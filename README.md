@@ -105,6 +105,7 @@ datamodule = VideoDataModule(
     num_workers=4,
     num_timesteps=8,
     preprocess_input_size=224,
+    preprocess_clip_duration=1,
     preprocess_means=backbone.mean,
     preprocess_stds=backbone.std,
     preprocess_min_short_side_scale=256,
@@ -119,7 +120,8 @@ Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
     datamodule,
     model,
-    optimizer=optimizer
+    optimizer=optimizer,
+    max_epochs=8
 )
 
 trainer.fit()
@@ -142,12 +144,12 @@ neck = GRUNeck(num_features=backbone.num_features, hidden_size=128, num_layers=2
 datamodule = VideoDataModule(
     train_root=".../ucf6/train",
     val_root=".../ucf6/val",
-    clip_duration=2,
     train_dataset_multiplier=1,
     batch_size=4,
     num_workers=4,
     num_timesteps=8,
     preprocess_input_size=224,
+    preprocess_clip_duration=1,
     preprocess_means=backbone.mean,
     preprocess_stds=backbone.std,
     preprocess_min_short_side_scale=256,
@@ -162,6 +164,7 @@ Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
     datamodule,
     model,
+    max_epochs=8
 )
 
 trainer.fit()

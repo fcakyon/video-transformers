@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.auto import tqdm
 
 import video_transformers.data
-from video_transformers.modules import VideoClassificationModel
+from video_transformers.modeling import VideoClassificationModel
 from video_transformers.schedulers import get_linear_scheduler_with_warmup
 from video_transformers.tasks.single_label_classification import SingleLabelClassificationTaskMixin
 from video_transformers.tracking import TensorBoardTracker
@@ -223,11 +223,14 @@ class BaseTrainer:
         data_config = self.hparams["data"]
         config.update(
             {
-                "preprocess_means": data_config["preprocess_config"]["means"],
-                "preprocess_stds": data_config["preprocess_config"]["stds"],
-                "preprocess_min_short_side_scale": data_config["preprocess_config"]["min_short_side_scale"],
-                "preprocess_input_size": data_config["preprocess_config"]["input_size"],
-                "num_timesteps": data_config["preprocess_config"]["timesteps"],
+                "preprocessor": {
+                    "means": data_config["preprocess_config"]["means"],
+                    "stds": data_config["preprocess_config"]["stds"],
+                    "min_short_side": data_config["preprocess_config"]["min_short_side"],
+                    "input_size": data_config["preprocess_config"]["input_size"],
+                    "clip_duration": data_config["preprocess_config"]["clip_duration"],
+                    "num_timesteps": data_config["preprocess_config"]["num_timesteps"],
+                },
                 "labels": data_config["labels"],
             }
         )
@@ -298,12 +301,11 @@ class BaseTrainer:
         return val_loss
 
     def fit(self):
-        self.accelerator.print("Calculating training & validation sizes for better experience...")
-        len_train_dataloader = len(self.train_dataloader)
-        len_val_dataloader = len(self.val_dataloader)
-
         self.accelerator.print(f"Trainable parameteres: {self.model.num_trainable_params}")
         self.accelerator.print(f"Total parameteres: {self.model.num_total_params}")
+
+        len_train_dataloader = len(self.train_dataloader)
+        len_val_dataloader = len(self.val_dataloader)
 
         for epoch in range(self.starting_epoch, self.hparams["max_epochs"]):
             self._log_last_lr()
@@ -326,7 +328,8 @@ class BaseTrainer:
                 pbar.set_postfix({"loss": f"{train_loss:.4f}", train_score[0]: f"{train_score[1]:.3f}"})
 
                 # val loop
-                val_loss = self._one_val_loop(pbar, len_val_dataloader)
+                with torch.inference_mode():
+                    val_loss = self._one_val_loop(pbar, len_val_dataloader)
 
                 # call the end of val epoch hook
                 self.on_validation_epoch_end()
