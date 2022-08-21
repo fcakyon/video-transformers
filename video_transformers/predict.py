@@ -13,7 +13,7 @@ def predict(
     model,
     video_or_folder_path,
     preprocessor_config: dict,
-    labels: list[str],
+    labels: List[str],
     mode: str = "first_batch",
     device: str = None,
 ):
