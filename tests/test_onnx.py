@@ -3,7 +3,7 @@ import unittest
 
 class TestOnnx(unittest.TestCase):
     def test_onnx_export(self):
-        from video_transformers import VideoClassificationModel
+        from video_transformers import VideoModel
 
         config = {
             "backbone": {
@@ -39,12 +39,12 @@ class TestOnnx(unittest.TestCase):
             "task": "single_label_classification",
         }
 
-        model = VideoClassificationModel.from_config(config)
+        model = VideoModel.from_config(config)
 
         model.to_onnx()
 
     def test_quantized_onnx_export(self):
-        from video_transformers import VideoClassificationModel
+        from video_transformers import VideoModel
 
         config = {
             "backbone": {
@@ -80,7 +80,7 @@ class TestOnnx(unittest.TestCase):
             "task": "single_label_classification",
         }
 
-        model = VideoClassificationModel.from_config(config)
+        model = VideoModel.from_config(config)
 
         model.to_onnx(quantize=True)
 

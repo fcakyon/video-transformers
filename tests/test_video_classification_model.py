@@ -5,7 +5,7 @@ class TestVideoClassificationModel(unittest.TestCase):
     def test_transformers_backbone(self):
         import torch
 
-        from video_transformers import VideoClassificationModel
+        from video_transformers import VideoModel
 
         config = {
             "backbone": {
@@ -42,7 +42,7 @@ class TestVideoClassificationModel(unittest.TestCase):
         }
         batch_size = 2
 
-        model = VideoClassificationModel.from_config(config)
+        model = VideoModel.from_config(config)
 
         input = torch.randn(batch_size, 3, config["preprocessor"]["num_timesteps"], 224, 224)
         output = model(input)

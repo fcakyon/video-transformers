@@ -96,7 +96,7 @@ class TimeDistributed(nn.Module):
         return x
 
 
-class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
+class VideoModel(nn.Module, PyTorchModelHubMixin):
     """
     (BxCxTxHxW)
          ↓
@@ -111,7 +111,7 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
     """
 
     @classmethod
-    def from_config(cls, config: Dict) -> "VideoClassificationModel":
+    def from_config(cls, config: Dict) -> "VideoModel":
         """
         Loads a model from a config file.
         """

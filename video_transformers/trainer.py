@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.auto import tqdm
 
 import video_transformers.data
-from video_transformers.modeling import VideoClassificationModel
+from video_transformers.modeling import VideoModel
 from video_transformers.schedulers import get_linear_scheduler_with_warmup
 from video_transformers.tasks.single_label_classification import SingleLabelClassificationTaskMixin
 from video_transformers.tracking import TensorBoardTracker
@@ -24,7 +24,7 @@ class BaseTrainer:
     def __init__(
         self,
         datamodule: video_transformers.data.VideoDataModule,
-        model: VideoClassificationModel,
+        model: VideoModel,
         max_epochs: int = 12,
         cpu: bool = False,
         mixed_precision: str = "no",
@@ -93,7 +93,7 @@ class BaseTrainer:
         hparams = {k: v for k, v in hparams.items() if k not in ignore_args}
         if config_dict is not None:
             hparams.update(config_dict)
-        if isinstance(model, VideoClassificationModel):
+        if isinstance(model, VideoModel):
             hparams.update({"model": model.config})
         if isinstance(datamodule, video_transformers.data.VideoDataModule):
             hparams.update({"data": datamodule.config})
