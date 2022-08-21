@@ -11,6 +11,7 @@ from torch import nn
 
 import video_transformers.backbones.base
 import video_transformers.deployment.onnx
+import video_transformers.predict
 from video_transformers.heads import LinearHead
 from video_transformers.utils.torch import get_num_total_params, get_num_trainable_params
 
@@ -286,3 +287,25 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
             x = self.neck(x)
         x = self.head(x)
         return x
+
+    def predict(self, video_or_folder_path: Union[str, Path], mode) -> List[Dict]:
+        """
+        Predict the labels and probabilities of a video or folder of videos.
+        Supports local file path/folder directory, S3 URI and https URL.
+
+        Args:
+            model: The model to use for prediction.
+            video_or_folder_path: The path to the video or folder of videos.
+                Supports local file path/folder directory, S3 URI and https URL.
+            mode: The mode to use for prediction. Can be "first_batch", "average_all", "random_batch", "uniform_batch".
+        """
+        result = video_transformers.predict.predict(
+            self,
+            video_or_folder_path=video_or_folder_path,
+            mode=mode,
+            preprocessor_config=self.preprocessor_config,
+            labels=self.labels,
+            device=next(self.parameters()).device,
+        )
+
+        return result

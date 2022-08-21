@@ -171,6 +171,18 @@ trainer.fit()
 
 ```
 
+- Perform prediction for a single file or folder of videos:
+
+```python
+from video_transformers import VideoClassificationModel
+
+model = VideoClassificationModel.from_pretrained(model_name_or_path)
+
+model.predict(video_path="video.mp4")
+>> [{'filename': "video.mp4", 'predictions': {'class1': 0.98, 'class2': 0.02}}]
+```
+
+
 ## 🤗 Full HuggingFace Integration
 
 - Push your fine-tuned model to the hub:

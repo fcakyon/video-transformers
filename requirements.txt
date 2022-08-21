@@ -4,8 +4,6 @@ transformers>=4.21.1
 timm>=0.6.7
 click==8.0.4
 pytorchvideo
-torch
-torchvision
 balanced-loss
 scikit-learn
 tensorboard
