@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 
 import pytorchvideo.data
 import torch
