@@ -1,7 +1,7 @@
 import unittest
 
 
-class TestVideoClassificationModel(unittest.TestCase):
+class TestVideoModel(unittest.TestCase):
     def test_transformers_backbone(self):
         import torch
 
