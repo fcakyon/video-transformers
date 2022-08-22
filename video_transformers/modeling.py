@@ -10,7 +10,6 @@ from huggingface_hub.hub_mixin import PyTorchModelHubMixin
 from torch import nn
 
 import video_transformers.backbones.base
-import video_transformers.deployment.onnx
 import video_transformers.predict
 from video_transformers.heads import LinearHead
 from video_transformers.hfhub_wrapper.hub_mixin import push_to_hub
@@ -327,7 +326,7 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         else:
             config["neck"] = None
         config["labels"] = self.labels
-        config["preprocessor_config"] = self.preprocessor_config
+        config["preprocessor"] = self.preprocessor_config
         return config
 
     def to_onnx(
@@ -346,8 +345,31 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
             export_dir: Directory to export model to.
             export_filename: Filename to export model to.
         """
+        import video_transformers.deployment.onnx
 
         video_transformers.deployment.onnx.export(self, quantize, opset_version, export_dir, export_filename)
+
+    def to_gradio(
+        self,
+        examples: List[str],
+        author_username: str = None,
+        export_dir: str = "runs/exports/",
+        export_filename: str = "app.py",
+    ):
+        """
+        Export model as Gradio App.
+
+        Args:
+            examples: List of examples to use for the app.
+            author_username: Author's username.
+            export_dir: Directory to export model to.
+            export_filename: Filename to export model to.
+        """
+        import video_transformers.deployment.gradio
+
+        video_transformers.deployment.gradio.export_gradio_app(
+            self, examples, author_username, export_dir, export_filename
+        )
 
     @property
     def example_input_array(self):

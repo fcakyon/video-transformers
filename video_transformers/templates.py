@@ -123,7 +123,7 @@ def export_hf_model_card(
 
 
 def generate_gradio_app(
-    model_url: str,
+    model_path_or_url: str,
     examples: List[str],
     author_username: str = None,
 ) -> str:
@@ -132,7 +132,7 @@ import gradio as gr
 
 from video_transformers import VideoModel
 
-model: VideoModel = VideoModel.from_pretrained({model_url})
+model: VideoModel = VideoModel.from_pretrained({model_path_or_url})
 
 app = gr.Blocks()
 
@@ -168,7 +168,6 @@ with app:
 
             gr.Markdown("**Credits:**")
             gr.Markdown("This space is powered by [video-transformers]('https://github.com/video-transformers/')")
-            gr.Markdown("This model is available at 'huggingface.co/{model_url}'.")
             gr.Markdown("{"This model is finetuned by '" + author_username+"'." if author_username else ""}")
 """
 
