@@ -13,7 +13,7 @@ def export_gradio_app(
 ) -> str:
     Path(export_dir).mkdir(parents=True, exist_ok=True)
     app_path = Path(export_dir) / export_filename
-    model_dir = Path(export_dir) / "checkpoint"
+    model_dir = str(Path(export_dir) / "checkpoint")
     # save model
     model.save_pretrained(model_dir, config=model.config)
     # save as gradio app
