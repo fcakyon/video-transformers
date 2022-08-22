@@ -221,17 +221,22 @@ class BaseTrainer:
     def save_checkpoint(self, save_path: Union[str, Path]):
         config = self.model.config.copy()
         data_config = self.hparams["data"]
+        try:
+            scheduler_config = scheduler_to_config(self.scheduler)
+        except TypeError:
+            scheduler_config = None
         config.update(
             {
                 "preprocessor": {
-                    "means": data_config["preprocess_config"]["means"],
-                    "stds": data_config["preprocess_config"]["stds"],
-                    "min_short_side": data_config["preprocess_config"]["min_short_side"],
-                    "input_size": data_config["preprocess_config"]["input_size"],
-                    "clip_duration": data_config["preprocess_config"]["clip_duration"],
-                    "num_timesteps": data_config["preprocess_config"]["num_timesteps"],
+                    "means": data_config["preprocessor_config"]["means"],
+                    "stds": data_config["preprocessor_config"]["stds"],
+                    "min_short_side": data_config["preprocessor_config"]["min_short_side"],
+                    "input_size": data_config["preprocessor_config"]["input_size"],
+                    "clip_duration": data_config["preprocessor_config"]["clip_duration"],
+                    "num_timesteps": data_config["preprocessor_config"]["num_timesteps"],
                 },
                 "labels": data_config["labels"],
+                "scheduler": scheduler_config,
             }
         )
         self.model.save_pretrained(save_path, config)
