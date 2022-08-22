@@ -10,7 +10,7 @@ from torch.optim.lr_scheduler import _LRScheduler
 from tqdm.auto import tqdm
 
 import video_transformers.data
-from video_transformers.modeling import VideoClassificationModel
+from video_transformers.modeling import VideoModel
 from video_transformers.schedulers import get_linear_scheduler_with_warmup
 from video_transformers.tasks.single_label_classification import SingleLabelClassificationTaskMixin
 from video_transformers.tracking import TensorBoardTracker
@@ -24,7 +24,7 @@ class BaseTrainer:
     def __init__(
         self,
         datamodule: video_transformers.data.VideoDataModule,
-        model: VideoClassificationModel,
+        model: VideoModel,
         max_epochs: int = 12,
         cpu: bool = False,
         mixed_precision: str = "no",
@@ -93,7 +93,7 @@ class BaseTrainer:
         hparams = {k: v for k, v in hparams.items() if k not in ignore_args}
         if config_dict is not None:
             hparams.update(config_dict)
-        if isinstance(model, VideoClassificationModel):
+        if isinstance(model, VideoModel):
             hparams.update({"model": model.config})
         if isinstance(datamodule, video_transformers.data.VideoDataModule):
             hparams.update({"data": datamodule.config})
@@ -221,17 +221,22 @@ class BaseTrainer:
     def save_checkpoint(self, save_path: Union[str, Path]):
         config = self.model.config.copy()
         data_config = self.hparams["data"]
+        try:
+            scheduler_config = scheduler_to_config(self.scheduler)
+        except TypeError:
+            scheduler_config = None
         config.update(
             {
                 "preprocessor": {
-                    "means": data_config["preprocess_config"]["means"],
-                    "stds": data_config["preprocess_config"]["stds"],
-                    "min_short_side": data_config["preprocess_config"]["min_short_side"],
-                    "input_size": data_config["preprocess_config"]["input_size"],
-                    "clip_duration": data_config["preprocess_config"]["clip_duration"],
-                    "num_timesteps": data_config["preprocess_config"]["num_timesteps"],
+                    "means": data_config["preprocessor_config"]["means"],
+                    "stds": data_config["preprocessor_config"]["stds"],
+                    "min_short_side": data_config["preprocessor_config"]["min_short_side"],
+                    "input_size": data_config["preprocessor_config"]["input_size"],
+                    "clip_duration": data_config["preprocessor_config"]["clip_duration"],
+                    "num_timesteps": data_config["preprocessor_config"]["num_timesteps"],
                 },
                 "labels": data_config["labels"],
+                "scheduler": scheduler_config,
             }
         )
         self.model.save_pretrained(save_path, config)

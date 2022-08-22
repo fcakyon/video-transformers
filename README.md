@@ -79,7 +79,7 @@ val_root
 
 ```python
 from torch.optim import AdamW
-from video_transformers import TimeDistributed, VideoClassificationModel
+from video_transformers import TimeDistributed, VideoModel
 from video_transformers.backbones.transformers import TransformersBackbone
 from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
@@ -114,7 +114,7 @@ datamodule = VideoDataModule(
 )
 
 head = LinearHead(hidden_size=neck.num_features, num_classes=datamodule.num_classes)
-model = VideoClassificationModel(backbone, head, neck)
+model = VideoModel(backbone, head, neck)
 
 Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
@@ -131,7 +131,7 @@ trainer.fit()
 - Fine-tune MobileViT (from Timm) + GRU based video classifier:
 
 ```python
-from video_transformers import TimeDistributed, VideoClassificationModel
+from video_transformers import TimeDistributed, VideoModel
 from video_transformers.backbones.timm import TimmBackbone
 from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
@@ -158,7 +158,7 @@ datamodule = VideoDataModule(
 )
 
 head = LinearHead(hidden_size=neck.hidden_size, num_classes=datamodule.num_classes)
-model = VideoClassificationModel(backbone, head, neck)
+model = VideoModel(backbone, head, neck)
 
 Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
@@ -174,9 +174,9 @@ trainer.fit()
 - Perform prediction for a single file or folder of videos:
 
 ```python
-from video_transformers import VideoClassificationModel
+from video_transformers import VideoModel
 
-model = VideoClassificationModel.from_pretrained(model_name_or_path)
+model = VideoModel.from_pretrained(model_name_or_path)
 
 model.predict(video_path="video.mp4")
 >> [{'filename': "video.mp4", 'predictions': {'class1': 0.98, 'class2': 0.02}}]
@@ -188,9 +188,9 @@ model.predict(video_path="video.mp4")
 - Push your fine-tuned model to the hub:
 
 ```python
-from video_transformers import VideoClassificationModel
+from video_transformers import VideoModel
 
-model = VideoClassificationModel.from_pretrained("runs/exp/checkpoint")
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
 
 model.push_to_hub('model_name')
 ```
@@ -198,9 +198,9 @@ model.push_to_hub('model_name')
 - Load any pretrained video-transformer model from the hub:
 
 ```python
-from video_transformers import VideoClassificationModel
+from video_transformers import VideoModel
 
-model = VideoClassificationModel.from_pretrained("runs/exp/checkpoint")
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
 
 model.from_pretrained('account_name/model_name')
 ```
@@ -208,9 +208,9 @@ model.from_pretrained('account_name/model_name')
 - (Incoming feature) automatically Gradio app Huggingface Space:
 
 ```python
-from video_transformers import VideoClassificationModel
+from video_transformers import VideoModel
 
-model = VideoClassificationModel.from_pretrained("runs/exp/checkpoint")
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
 model.push_to_space('account_name/app_name')
 ```
 
@@ -242,8 +242,8 @@ trainer = Trainer(
 - Convert your trained models into ONNX format for deployment:
 
 ```python
-from video_transformers import VideoClassificationModel
+from video_transformers import VideoModel
 
-model = VideoClassificationModel.from_pretrained("runs/exp/checkpoint")
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
 model.to_onnx(quantize=False, opset_version=12, export_dir="runs/exports/", export_filename="model.onnx")
 ```

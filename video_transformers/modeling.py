@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 
 import torch
 from huggingface_hub.constants import PYTORCH_WEIGHTS_NAME
@@ -37,7 +37,6 @@ class TimeDistributed(nn.Module):
         super(TimeDistributed, self).__init__()
         self.backbone = backbone
         self.low_memory = low_memory
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
 
     @property
     def num_features(self):
@@ -96,7 +95,7 @@ class TimeDistributed(nn.Module):
         return x
 
 
-class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
+class VideoModel(nn.Module, PyTorchModelHubMixin):
     """
     (BxCxTxHxW)
          ↓
@@ -111,7 +110,7 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
     """
 
     @classmethod
-    def from_config(cls, config: Dict) -> "VideoClassificationModel":
+    def from_config(cls, config: Dict) -> "VideoModel":
         """
         Loads a model from a config file.
         """
@@ -124,7 +123,7 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
         backbone = video_transformers.AutoBackbone.from_config(config["backbone"])
         head = video_transformers.AutoHead.from_config(config["head"])
         neck = None
-        if "neck" in config:
+        if config["neck"] is not None:
             neck = video_transformers.AutoNeck.from_config(config["neck"])
 
         return cls(
@@ -246,6 +245,10 @@ class VideoClassificationModel(nn.Module, PyTorchModelHubMixin):
         config["head"] = self.head.config
         if self.neck is not None:
             config["neck"] = self.neck.config
+        else:
+            config["neck"] = None
+        config["labels"] = self.labels
+        config["preprocessor_config"] = self.preprocessor_config
         return config
 
     def to_onnx(
