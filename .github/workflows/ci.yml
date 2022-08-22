@@ -54,7 +54,7 @@ jobs:
 
       - name: Lint with flake8, black and isort
         run: |
-          pip install -e .[dev]
+          pip install .[dev]
           # stop the build if there are Python syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           black . --check --config pyproject.toml
@@ -76,11 +76,11 @@ jobs:
 
       - name: Install video-transformers package from local setup.py
         run: >
-          pip install -e .
+          pip install .
 
       - name: Install test dependencies
         run: >
-          pip install -e .[test]
+          pip install .[test]
 
       - name: Unittest video-transformers
         run: |
