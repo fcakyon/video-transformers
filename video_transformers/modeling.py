@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import torch
 from huggingface_hub.constants import PYTORCH_WEIGHTS_NAME
@@ -10,9 +10,9 @@ from huggingface_hub.hub_mixin import PyTorchModelHubMixin
 from torch import nn
 
 import video_transformers.backbones.base
-import video_transformers.deployment.onnx
 import video_transformers.predict
 from video_transformers.heads import LinearHead
+from video_transformers.hfhub_wrapper.hub_mixin import push_to_hub
 from video_transformers.utils.torch import get_num_total_params, get_num_trainable_params
 
 
@@ -176,6 +176,84 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
 
         return model
 
+    def push_to_hub(
+        self,
+        *,
+        repo_path_or_name: Optional[str] = None,
+        repo_url: Optional[str] = None,
+        commit_message: Optional[str] = "Add model",
+        organization: Optional[str] = None,
+        private: bool = False,
+        api_endpoint: Optional[str] = None,
+        use_auth_token: Optional[Union[bool, str]] = None,
+        git_user: Optional[str] = None,
+        git_email: Optional[str] = None,
+        config: Optional[dict] = None,
+        skip_lfs_files: bool = False,
+        repo_id: Optional[str] = None,
+        token: Optional[str] = None,
+        branch: Optional[str] = None,
+        create_pr: Optional[bool] = None,
+        allow_patterns: Optional[Union[List[str], str]] = None,
+        ignore_patterns: Optional[Union[List[str], str]] = None,
+    ) -> str:
+        """
+        Upload model checkpoint to the Hub.
+
+        Use `allow_patterns` and `ignore_patterns` to precisely filter which files
+        should be pushed to the hub. See [`upload_folder`] reference for more details.
+
+        Parameters:
+            repo_id (`str`, *optional*):
+                Repository name to which push.
+            commit_message (`str`, *optional*):
+                Message to commit while pushing.
+            private (`bool`, *optional*, defaults to `False`):
+                Whether the repository created should be private.
+            api_endpoint (`str`, *optional*):
+                The API endpoint to use when pushing the model to the hub.
+            token (`str`, *optional*):
+                The token to use as HTTP bearer authorization for remote files.
+                If not set, will use the token set when logging in with
+                `transformers-cli login` (stored in `~/.huggingface`).
+            branch (`str`, *optional*):
+                The git branch on which to push the model. This defaults to
+                the default branch as specified in your repository, which
+                defaults to `"main"`.
+            create_pr (`boolean`, *optional*):
+                Whether or not to create a Pull Request from `branch` with that commit.
+                Defaults to `False`.
+            config (`dict`, *optional*):
+                Configuration object to be saved alongside the model weights.
+            allow_patterns (`List[str]` or `str`, *optional*):
+                If provided, only files matching at least one pattern are pushed.
+            ignore_patterns (`List[str]` or `str`, *optional*):
+                If provided, files matching any of the patterns are not pushed.
+
+        Returns:
+            The url of the commit of your model in the given repository.
+        """
+        return push_to_hub(
+            self=self,
+            repo_path_or_name=repo_path_or_name,
+            repo_url=repo_url,
+            commit_message=commit_message,
+            organization=organization,
+            private=private,
+            api_endpoint=api_endpoint,
+            use_auth_token=use_auth_token,
+            git_user=git_user,
+            git_email=git_email,
+            config=config,
+            skip_lfs_files=skip_lfs_files,
+            repo_id=repo_id,
+            token=token,
+            branch=branch,
+            create_pr=create_pr,
+            allow_patterns=allow_patterns,
+            ignore_patterns=ignore_patterns,
+        )
+
     def __init__(
         self,
         backbone: Union[TimeDistributed, video_transformers.backbones.base.Backbone],
@@ -248,7 +326,7 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         else:
             config["neck"] = None
         config["labels"] = self.labels
-        config["preprocessor_config"] = self.preprocessor_config
+        config["preprocessor"] = self.preprocessor_config
         return config
 
     def to_onnx(
@@ -267,8 +345,31 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
             export_dir: Directory to export model to.
             export_filename: Filename to export model to.
         """
+        import video_transformers.deployment.onnx
 
         video_transformers.deployment.onnx.export(self, quantize, opset_version, export_dir, export_filename)
+
+    def to_gradio(
+        self,
+        examples: List[str],
+        author_username: str = None,
+        export_dir: str = "runs/exports/",
+        export_filename: str = "app.py",
+    ):
+        """
+        Export model as Gradio App.
+
+        Args:
+            examples: List of examples to use for the app.
+            author_username: Author's username.
+            export_dir: Directory to export model to.
+            export_filename: Filename to export model to.
+        """
+        import video_transformers.deployment.gradio
+
+        video_transformers.deployment.gradio.export_gradio_app(
+            self, examples, author_username, export_dir, export_filename
+        )
 
     @property
     def example_input_array(self):

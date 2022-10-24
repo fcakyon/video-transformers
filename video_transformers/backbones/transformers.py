@@ -33,6 +33,12 @@ class TransformersBackbone(Backbone):
         else:
             raise NotImplementedError(f"Huggingface model not supported: {backbone.base_model_prefix}")
 
+        # set model input num frames
+        if hasattr(backbone.config, "num_frames"):  # videomae
+            self._num_frames = backbone.config.num_frames
+        else:
+            self._num_frames = 1
+
         self.model = backbone
         self.num_features = num_features
         self.mean = mean
@@ -62,21 +68,47 @@ class TransformersBackbone(Backbone):
     def model_name(self) -> str:
         return self._model_name
 
+    @property
+    def num_frames(self) -> int:
+        return self._num_frames
+
     def forward(self, x):
-        output = self.model(pixel_values=x, return_dict=True)[1]  # output: batch x 1 x num_features
-        # convert to batch x num_features
-        return output.contiguous().view(output.shape[0], self.num_features)  # output: batch x num_features
+        if self.model.base_model_prefix in models_3d:
+            # ensure num_timesteps matches model num_frames
+            if x.shape[2] != self.num_frames:
+                raise ValueError(
+                    f"Input has {x.shape[2]} frames, but {self.model_name} accepts {self.num_frames} frames. Set num_timesteps to {self.num_frames}."
+                )
+            # x: (B, C, T, H, W)
+            x = x.permute(0, 2, 1, 3, 4)
+            # x: (B, T, C, H, W)
+            output = self.model(pixel_values=x, return_dict=True)[0]
+            # output: batch x latent_dim x num_features
+        else:
+            output = self.model(pixel_values=x, return_dict=True)[1]
+            # output: batch x 1 x num_features
+        if output.dim() == 3:
+            output = output.mean(1)
+        return output  # output: batch x num_features
 
     def unfreeze_last_n_stages(self, n):
         if self.model.base_model_prefix == "convnext":
             stages = []
-            stages.append(self.model.base_model.embeddings)
+            # stages.append(self.model.base_model.embeddings)
+            # freeze embeddings
+            for param in self.model.base_model.embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
             stages.extend(self.model.base_model.encoder.stages)
             stages.append(self.model.base_model.layernorm)
             unfreeze_last_n_stages_torch(stages, n)
         elif self.model.base_model_prefix == "levit":
             stages = []
-            stages.extend(list(self.model.base_model.patch_embeddings.children()))
+            # stages.extend(list(self.model.base_model.patch_embeddings.children()))
+            # freeze embeddings
+            for param in self.model.base_model.patch_embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
             stages.extend(self.model.base_model.encoder.stages)
             unfreeze_last_n_stages_torch(stages, n)
         elif self.model.base_model_prefix == "cvt":
@@ -85,14 +117,30 @@ class TransformersBackbone(Backbone):
             unfreeze_last_n_stages_torch(stages, n)
         elif self.model.base_model_prefix == "clip":
             stages = []
-            stages.extend(list(self.model.base_model.vision_model.embeddings.children()))
+            # stages.extend(list(self.model.base_model.vision_model.embeddings.children()))
+            # freeze embeddings
+            for param in self.model.base_model.vision_model.embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
             stages.extend(list(self.model.base_model.vision_model.encoder.layers.children()))
             unfreeze_last_n_stages_torch(stages, n)
         elif self.model.base_model_prefix in ["swin", "vit", "deit", "beit"]:
             stages = []
-            stages.extend(list(self.model.base_model.embeddings.children()))
+            # stages.extend(list(self.model.base_model.embeddings.children()))
+            # freeze embeddings
+            for param in self.model.base_model.embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
             stages.extend(list(self.model.base_model.encoder.layers.children()))
             stages.append(self.model.base_model.layernorm)
+            unfreeze_last_n_stages_torch(stages, n)
+        elif self.model.base_model_prefix == "videomae":
+            stages = []
+            # freeze embeddings
+            for param in self.model.base_model.embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
+            stages.extend(list(self.model.base_model.encoder.layer.children()))
             unfreeze_last_n_stages_torch(stages, n)
         else:
             raise NotImplementedError(f"Freezing not supported for Huggingface model: {self.model.base_model_prefix}")

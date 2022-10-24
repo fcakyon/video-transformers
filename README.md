@@ -205,7 +205,16 @@ model = VideoModel.from_pretrained("runs/exp/checkpoint")
 model.from_pretrained('account_name/model_name')
 ```
 
-- (Incoming feature) automatically Gradio app Huggingface Space:
+- Push your model to HuggingFace hub with auto-generated model-cards:
+
+```python
+from video_transformers import VideoModel
+
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
+model.push_to_hub('account_name/app_name')
+```
+
+- (Incoming feature) Push your model as a Gradio app to HuggingFace Space:
 
 ```python
 from video_transformers import VideoModel
@@ -246,4 +255,15 @@ from video_transformers import VideoModel
 
 model = VideoModel.from_pretrained("runs/exp/checkpoint")
 model.to_onnx(quantize=False, opset_version=12, export_dir="runs/exports/", export_filename="model.onnx")
+```
+
+## 🤗 Gradio support
+
+- Convert your trained models into Gradio App for deployment:
+
+```python
+from video_transformers import VideoModel
+
+model = VideoModel.from_pretrained("runs/exp/checkpoint")
+model.to_gradio(examples=['video.mp4'], export_dir="runs/exports/", export_filename="app.py")
 ```
