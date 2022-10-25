@@ -28,11 +28,7 @@ and supports:
 
 - loading pretrained models from [HuggingFace Hub](https://huggingface.co/models?pipeline_tag=image-classification&sort=downloads)
 
-## ⌛ Incoming Features
-
 - Automated [Gradio app](https://gradio.app/), and [space](https://huggingface.co/spaces) creation 
-
-- [Layer Hub](https://layer.ai/community) support
 
 ## 🏁 Installation
 
