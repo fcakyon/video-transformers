@@ -20,7 +20,7 @@ and supports:
 
 - creating and fine-tunining video models using [transformers](https://github.com/huggingface/transformers) and [timm](https://github.com/rwightman/pytorch-image-models) vision models
 
-- experiment tracking with [layer](https://layer.ai/), [neptune](https://neptune.ai/), [tensorboard](https://www.tensorflow.org/tensorboard) and other trackers
+- experiment tracking with [neptune](https://neptune.ai/), [tensorboard](https://www.tensorflow.org/tensorboard) and other trackers
 
 - exporting fine-tuned models in [ONNX](https://onnx.ai/) format
 
