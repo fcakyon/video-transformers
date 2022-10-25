@@ -9,4 +9,4 @@ scikit-learn
 tensorboard
 opencv-python
 gradio>=3.1.6
-huggingface-hub @ git+https://github.com/huggingface/huggingface_hub.git@a1282ab170e6248a893764d5d6759efeaa7a5421
+huggingface-hub==0.10.1
