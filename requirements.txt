@@ -10,3 +10,4 @@ tensorboard
 opencv-python
 gradio>=3.1.6
 huggingface-hub==0.10.1
+importlib-metadata>=1.1.0,<4.3;python_version<'3.8'
