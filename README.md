@@ -7,8 +7,8 @@
 </p>
 
 <div align="center">
-    <a href="https://badge.fury.io/py/balanced-loss"><img src="https://badge.fury.io/py/video-transformers.svg" alt="pypi version"></a>
-    <a href="https://pepy.tech/project/balanced-loss"><img src="https://pepy.tech/badge/video-transformers" alt="total downloads"></a>
+    <a href="https://badge.fury.io/py/video-transformers"><img src="https://badge.fury.io/py/video-transformers.svg" alt="pypi version"></a>
+    <a href="https://pepy.tech/project/video-transformers"><img src="https://pepy.tech/badge/video-transformers" alt="total downloads"></a>
     <a href="https://twitter.com/fcakyon"><img src="https://img.shields.io/twitter/follow/fcakyon?color=blue&logo=twitter&style=flat" alt="fcakyon twitter"></a>
 </div>
 
