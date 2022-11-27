@@ -44,6 +44,12 @@ and supports:
 conda install pytorch=1.11.0 torchvision=0.12.0 cudatoolkit=11.3 -c pytorch
 ```
 
+- Install pytorchvideo from main branch:
+
+```bash
+pip install git+https://github.com/facebookresearch/pytorchvideo.git
+```
+
 - Install `video-transformers`:
 
 ```bash
@@ -87,6 +93,7 @@ from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
 from video_transformers.necks import TransformerNeck
 from video_transformers.trainer import trainer_factory
+from video_transformers.utils.file import download_ucf6
 
 backbone = TimeDistributed(TransformersBackbone("microsoft/cvt-13", num_unfrozen_stages=0))
 neck = TransformerNeck(
@@ -96,13 +103,11 @@ neck = TransformerNeck(
     transformer_enc_num_layers=2,
     dropout_p=0.1,
 )
-optimizer = AdamW(model.parameters(), lr=1e-4)
 
+download_ucf6("./")
 datamodule = VideoDataModule(
-    train_root=".../ucf6/train",
-    val_root=".../ucf6/val",
-    clip_duration=2,
-    train_dataset_multiplier=1,
+    train_root="ucf6/train",
+    val_root="ucf6/val",
     batch_size=4,
     num_workers=4,
     num_timesteps=8,
@@ -110,13 +115,15 @@ datamodule = VideoDataModule(
     preprocess_clip_duration=1,
     preprocess_means=backbone.mean,
     preprocess_stds=backbone.std,
-    preprocess_min_short_side_scale=256,
-    preprocess_max_short_side_scale=320,
+    preprocess_min_short_side=256,
+    preprocess_max_short_side=320,
     preprocess_horizontal_flip_p=0.5,
 )
 
 head = LinearHead(hidden_size=neck.num_features, num_classes=datamodule.num_classes)
 model = VideoModel(backbone, head, neck)
+
+optimizer = AdamW(model.parameters(), lr=1e-4)
 
 Trainer = trainer_factory("single_label_classification")
 trainer = Trainer(
@@ -139,14 +146,15 @@ from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
 from video_transformers.necks import GRUNeck
 from video_transformers.trainer import trainer_factory
+from video_transformers.utils.file import download_ucf6
 
 backbone = TimeDistributed(TimmBackbone("mobilevitv2_100", num_unfrozen_stages=0))
 neck = GRUNeck(num_features=backbone.num_features, hidden_size=128, num_layers=2, return_last=True)
 
+download_ucf6("./")
 datamodule = VideoDataModule(
-    train_root=".../ucf6/train",
-    val_root=".../ucf6/val",
-    train_dataset_multiplier=1,
+    train_root="ucf6/train",
+    val_root="ucf6/val",
     batch_size=4,
     num_workers=4,
     num_timesteps=8,
@@ -154,8 +162,8 @@ datamodule = VideoDataModule(
     preprocess_clip_duration=1,
     preprocess_means=backbone.mean,
     preprocess_stds=backbone.std,
-    preprocess_min_short_side_scale=256,
-    preprocess_max_short_side_scale=320,
+    preprocess_min_short_side=256,
+    preprocess_max_short_side=320,
     preprocess_horizontal_flip_p=0.5,
 )
 
