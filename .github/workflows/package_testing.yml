@@ -63,6 +63,9 @@ jobs:
         if: matrix.operating-system == 'macos-latest'
         run: pip install torch==${{ matrix.torch-version }}
 
+      - name: Install Pytorchvideo from main branch
+        run: pip install git+https://github.com/facebookresearch/pytorchvideo.git
+
       - name: Install latest video-transformers package
         run: >
           pip install --upgrade --force-reinstall video-transformers[test]
