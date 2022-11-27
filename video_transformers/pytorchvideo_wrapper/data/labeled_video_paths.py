@@ -17,7 +17,6 @@ from pytorchvideo.data.labeled_video_paths import LabeledVideoPaths as LabeledVi
 from pytorchvideo.data.video import VideoPathHandler
 from torchvision.datasets.folder import find_classes, has_file_allowed_extension, make_dataset
 
-
 logger = logging.getLogger(__name__)
 
 

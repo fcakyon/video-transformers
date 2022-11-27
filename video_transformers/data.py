@@ -13,8 +13,8 @@ from pytorchvideo.transforms import (
 )
 from torch.utils.data import DataLoader
 from torchvision.transforms import CenterCrop, Compose, Lambda, RandomCrop, RandomHorizontalFlip
-from video_transformers.pytorchvideo_wrapper.data.labeled_video_dataset import labeled_video_dataset
 
+from video_transformers.pytorchvideo_wrapper.data.labeled_video_dataset import labeled_video_dataset
 from video_transformers.pytorchvideo_wrapper.data.labeled_video_paths import LabeledVideoDataset, LabeledVideoPaths
 from video_transformers.utils.extra import class_to_config
 

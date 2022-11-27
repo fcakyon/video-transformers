@@ -2,9 +2,8 @@ import glob
 import os
 import re
 import urllib.request
-from pathlib import Path
 import zipfile
-import os
+from pathlib import Path
 
 
 def increment_path(path, exist_ok=True, sep=""):

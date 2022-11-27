@@ -23,9 +23,9 @@ except ImportError:
     UniformClipSamplerTruncateFromStart = None
 
 from pytorchvideo.data.utils import MultiProcessSampler
+from pytorchvideo.data.video import VideoPathHandler
 
 from .labeled_video_paths import LabeledVideoPaths
-from pytorchvideo.data.video import VideoPathHandler
 
 logger = logging.getLogger(__name__)
 
