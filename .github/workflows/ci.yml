@@ -64,6 +64,9 @@ jobs:
         if: matrix.operating-system == 'macos-latest'
         run: pip install torch==${{ matrix.torch-version }}
 
+      - name: Install Pytorchvideo from main branch
+        run: pip install git+https://github.com/facebookresearch/pytorchvideo.git
+
       - name: Lint with flake8, black and isort
         run: |
           pip install .[dev]

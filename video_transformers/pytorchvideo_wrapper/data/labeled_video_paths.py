@@ -6,7 +6,6 @@ from __future__ import annotations
 import logging
 import os
 import pathlib
-import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
@@ -17,8 +16,6 @@ from pytorchvideo.data.labeled_video_dataset import LabeledVideoDataset as Label
 from pytorchvideo.data.labeled_video_paths import LabeledVideoPaths as LabeledVideoPaths_
 from pytorchvideo.data.video import VideoPathHandler
 from torchvision.datasets.folder import find_classes, has_file_allowed_extension, make_dataset
-
-from video_transformers.utils.file import download_file
 
 logger = logging.getLogger(__name__)
 
@@ -292,73 +289,3 @@ class LabeledVideoDataset(LabeledVideoDataset_):
             return self._len
         else:
             raise ValueError(f"Length calculation not implemented for sampler: {type(self.video_sampler)}.")
-
-
-def labeled_video_dataset(
-    data_path: str,
-    clip_sampler: ClipSampler,
-    video_sampler: Type[torch.utils.data.Sampler] = None,
-    transform: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
-    video_path_prefix: str = "",
-    decode_audio: bool = True,
-    decoder: str = "pyav",
-    dataset_multiplier: int = 1,
-) -> LabeledVideoDataset:
-    """
-    A helper function to create ``LabeledVideoDataset`` object for Ucf101 and Kinetics datasets.
-
-    Args:
-        data_path (str): Path to the data. The path type defines how the data
-            should be read:
-
-            * For a file path, the file is read and each line is parsed into a
-              video path and label.
-            * For a directory, the directory structure defines the classes
-              (i.e. each subdirectory is a class).
-
-        clip_sampler (ClipSampler): Defines how clips should be sampled from each
-                video. See the clip sampling documentation for more information.
-
-        video_sampler (Type[torch.utils.data.Sampler]): Sampler for the internal
-                video container. This defines the order videos are decoded and,
-                if necessary, the distributed split.
-
-        transform (Callable): This callable is evaluated on the clip output before
-                the clip is returned. It can be used for user defined preprocessing and
-                augmentations to the clips. See the ``LabeledVideoDataset`` class for clip
-                output format.
-
-        video_path_prefix (str): Path to root directory with the videos that are
-                loaded in ``LabeledVideoDataset``. All the video paths before loading
-                are prefixed with this path.
-
-        decode_audio (bool): If True, also decode audio from video.
-
-        decoder (str): Defines what type of decoder used to decode a video.
-
-    """
-    labeled_video_paths = LabeledVideoPaths.from_path(data_path)
-    labeled_video_paths.path_prefix = video_path_prefix
-    video_sampler = torch.utils.data.RandomSampler(
-        replacement=True, num_samples=len(labeled_video_paths) * dataset_multiplier
-    )
-    dataset = LabeledVideoDataset(
-        labeled_video_paths,
-        clip_sampler,
-        video_sampler,
-        transform,
-        decode_audio=decode_audio,
-        decoder=decoder,
-    )
-    return dataset
-
-
-def download_ucf6(data_path: str):
-    """
-    Downloads the ucf6 dataset to the given path.
-    """
-    download_url = "https://github.com/fcakyon/video-transformers/releases/download/0.0.0/ucf6.zip"
-    download_path = os.path.join(data_path, "ucf6.zip")
-    download_file(download_url, download_path)
-    with zipfile.ZipFile(download_path, "r") as zip_ref:
-        zip_ref.extractall(data_path)
