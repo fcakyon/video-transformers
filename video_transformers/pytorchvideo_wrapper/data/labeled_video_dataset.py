@@ -25,7 +25,7 @@ except ImportError:
 from pytorchvideo.data.utils import MultiProcessSampler
 from pytorchvideo.data.video import VideoPathHandler
 
-from .labeled_video_paths import LabeledVideoPaths
+from video_transformers.pytorchvideo_wrapper.data.labeled_video_paths import LabeledVideoPaths
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,6 @@ class LabeledVideoDataset(torch.utils.data.IterableDataset):
         decode_audio: bool = True,
         decode_video: bool = True,
         decoder: str = "pyav",
-        frame_collation_type: str = "resize",
     ) -> None:
         """
         Args:
@@ -74,8 +73,6 @@ class LabeledVideoDataset(torch.utils.data.IterableDataset):
 
             decoder (str): Defines what type of decoder used to decode a video. Not used for
                 frame videos.
-
-            frame_collation_type (str): Defines how frames are collated.
         """
         self._decode_audio = decode_audio
         self._decode_video = decode_video
@@ -83,7 +80,6 @@ class LabeledVideoDataset(torch.utils.data.IterableDataset):
         self._clip_sampler = clip_sampler
         self._labeled_videos = labeled_video_paths
         self._decoder = decoder
-        self._frame_collation_type = frame_collation_type
 
         # If a RandomSampler is used we need to pass in a custom random generator that
         # ensures all PyTorch multiprocess workers have the same random seed.
@@ -162,7 +158,6 @@ class LabeledVideoDataset(torch.utils.data.IterableDataset):
                         decode_audio=self._decode_audio,
                         decode_video=self._decode_video,
                         decoder=self._decoder,
-                        frame_collation_type=self._frame_collation_type,
                     )
                     self._loaded_video_label = (video, info_dict, video_index)
                 except Exception as e:
@@ -237,7 +232,6 @@ class LabeledVideoDataset(torch.utils.data.IterableDataset):
                 "aug_index": aug_index,
                 **info_dict,
                 **({"audio": audio_samples} if audio_samples is not None else {}),
-                "clip_start_index": self._loaded_clip["frame_indices"][0],
             }
             if self._transform is not None:
                 sample_dict = self._transform(sample_dict)
