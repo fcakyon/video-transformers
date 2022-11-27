@@ -51,8 +51,8 @@ def scheduler_to_config(scheduler):
     if isinstance(main_scheduler, torch.optim.lr_scheduler.LinearLR):
         return {
             "optimizer": {
-                "name": scheduler.optimizer.__class__.__name__,
-                "defaults": scheduler.optimizer.defaults,
+                "name": main_scheduler.optimizer.__class__.__name__,
+                "defaults": main_scheduler.optimizer.defaults,
             },
             "warmup_scheduler": {
                 "class": "torch.optim.lr_scheduler.LinearLR",
