@@ -136,3 +136,5 @@ runs/
 *.avi
 *.zip
 *.onnx
+exports/
+examples/
