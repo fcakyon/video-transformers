@@ -22,6 +22,7 @@ class AutoHead:
     @classmethod
     def from_transformers(cls, name_or_path: str):
         from transformers import AutoModelForVideoClassification
+
         from video_transformers.heads import LinearHead
 
         model = AutoModelForVideoClassification.from_pretrained(name_or_path)
