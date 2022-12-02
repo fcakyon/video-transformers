@@ -320,3 +320,20 @@ from video_transformers import VideoModel
 model = VideoModel.from_pretrained("runs/exp/checkpoint")
 model.to_gradio(examples=['video.mp4'], export_dir="runs/exports/", export_filename="app.py")
 ```
+
+
+## Contributing
+
+Before opening a PR:
+
+- Install required development packages:
+
+```bash
+pip install -e ."[dev]"
+```
+
+- Reformat with black and isort:
+
+```bash
+python -m tests.run_code_style format
+```
