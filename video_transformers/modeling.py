@@ -140,10 +140,10 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         """
         Loads a model from a hf/transformers models.
         """
+        from transformers import AutoConfig, AutoProcessor
+
         import video_transformers
         import video_transformers.data
-
-        from transformers import AutoConfig, AutoProcessor
 
         processor = AutoProcessor.from_pretrained(name_of_path)
         model_config = AutoConfig.from_pretrained(name_of_path)
