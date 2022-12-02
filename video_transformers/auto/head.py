@@ -18,3 +18,15 @@ class AutoHead:
             return LinearHead(hidden_size, num_classes, dropout_p)
         else:
             raise ValueError(f"Unsupported head class name: {head_class_name}")
+
+    @classmethod
+    def from_transformers(cls, name_or_path: str):
+        from transformers import AutoModelForVideoClassification
+
+        from video_transformers.heads import LinearHead
+
+        model = AutoModelForVideoClassification.from_pretrained(name_or_path)
+        linear_head = LinearHead(model.classifier.in_features, model.classifier.out_features)
+        linear_head.linear.weight = model.classifier.weight
+        linear_head.linear.bias = model.classifier.bias
+        return linear_head

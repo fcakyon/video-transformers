@@ -3,8 +3,8 @@ from typing import Dict
 from video_transformers.backbones.base import Backbone
 from video_transformers.utils.torch import unfreeze_last_n_stages as unfreeze_last_n_stages_torch
 
-models_2d = ["convnext", "levit", "cvt", "clip", "swin", "vit", "deit", "beit"]
-models_3d = ["videomae"]
+models_2d = ["convnext", "levit", "cvt", "clip", "swin", "vit", "deit", "beit", "resnet"]
+models_3d = ["videomae", "timesformer"]
 
 
 class TransformersBackbone(Backbone):
@@ -24,7 +24,7 @@ class TransformersBackbone(Backbone):
 
         if hasattr(backbone.config, "hidden_size"):  # vit, swin, deit
             num_features = backbone.config.hidden_size
-        elif hasattr(backbone.config, "hidden_sizes"):  # levit, convnext
+        elif hasattr(backbone.config, "hidden_sizes"):  # levit, convnext, resnet
             num_features = backbone.config.hidden_sizes[-1]
         elif hasattr(backbone.config, "embed_dim"):  # cvt
             num_features = backbone.config.embed_dim[-1]
@@ -141,6 +141,23 @@ class TransformersBackbone(Backbone):
                 param.requires_grad = False
             # unfreeze last n stages
             stages.extend(list(self.model.base_model.encoder.layer.children()))
+            unfreeze_last_n_stages_torch(stages, n)
+        elif self.model.base_model_prefix == "timesformer":
+            stages = []
+            # freeze embeddings
+            for param in self.model.base_model.embeddings.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
+            stages.extend(list(self.model.base_model.encoder.layer.children()))
+            unfreeze_last_n_stages_torch(stages, n)
+        elif self.model.base_model_prefix == "resnet":
+            stages = []
+            # stages.append(self.model.base_model.embeddings)
+            # freeze embeddings
+            for param in self.model.base_model.embedder.parameters():
+                param.requires_grad = False
+            # unfreeze last n stages
+            stages.extend(self.model.base_model.encoder.stages)
             unfreeze_last_n_stages_torch(stages, n)
         else:
             raise NotImplementedError(f"Freezing not supported for Huggingface model: {self.model.base_model_prefix}")

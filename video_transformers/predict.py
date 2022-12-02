@@ -15,7 +15,7 @@ def predict(
     video_or_folder_path,
     preprocessor_config: dict,
     labels: List[str],
-    mode: str = "first_batch",
+    mode: str = "first_clip",
     device: str = None,
 ):
     """
@@ -28,7 +28,7 @@ def predict(
             Supports local file path/folder directory, S3 URI and https URL.
         preprocessor_config: The preprocessor config to use for prediction.
         labels: The labels to use for prediction.
-        mode: The mode to use for prediction. Can be "first_batch", "average_all", "random_batch", "uniform_batch".
+        mode: The mode to use for prediction. Can be "first_clip", "average_all", "random_clip", "uniform_clip".
         device: The device to use for prediction. Can be "cpu" or "cuda:0".
 
     """
@@ -38,22 +38,22 @@ def predict(
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu") if device is None else device
 
-    if mode == "first_batch":
+    if mode == "first_clip":
         clip_sampler = pytorchvideo.data.clip_sampling.UniformClipSamplerTruncateFromStart(
             clip_duration=preprocessor_config["clip_duration"],
             truncation_duration=preprocessor_config["clip_duration"],
         )
     elif mode == "average_all":
         clip_sampler = pytorchvideo.data.make_clip_sampler("uniform", preprocessor_config["clip_duration"])
-    elif mode == "random_batch":
+    elif mode == "random_clip":
         clip_sampler = pytorchvideo.data.make_clip_sampler("random", preprocessor_config["clip_duration"])
-    elif mode == "uniform_batch":
+    elif mode == "uniform_clip":
         clip_sampler = pytorchvideo.data.make_clip_sampler(
             "constant_clips_per_video", preprocessor_config["clip_duration"], 1
         )
     else:
         raise ValueError(
-            f"Unknown mode: {mode}. Should be one of 'first_batch', 'average_all', 'random_batch', 'uniform_batch'."
+            f"Unknown mode: {mode}. Should be one of 'first_clip', 'average_all', 'random_clip', 'uniform_clip'."
         )
 
     preprocessor = VideoPreprocessor(**preprocessor_config)
@@ -99,7 +99,10 @@ def predict(
         video_name = video_index_to_video_name[video_index]
         probabilities = torch.mean(torch.stack(clip_predictions), dim=1)
         video_predictions = zip(labels, probabilities.tolist()[0])
-        video_results = {"filename": video_name, "predictions": dict(video_predictions)}
+        # sort predictions by probability
+        video_predictions = dict(sorted(dict(video_predictions).items(), key=lambda item: item[1], reverse=True))
+        # add video name
+        video_results = {"filename": video_name, "predictions": video_predictions}
         results.append(video_results)
 
     if g_pathmgr.isfile(video_or_folder_path):

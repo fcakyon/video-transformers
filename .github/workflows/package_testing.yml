@@ -66,6 +66,9 @@ jobs:
       - name: Install Pytorchvideo from main branch
         run: pip install git+https://github.com/facebookresearch/pytorchvideo.git
 
+      - name: Install HF/Transformers from main branch
+        run: pip install -U git+https://github.com/huggingface/transformers.git
+
       - name: Install latest video-transformers package
         run: >
           pip install --upgrade --force-reinstall video-transformers[test]
