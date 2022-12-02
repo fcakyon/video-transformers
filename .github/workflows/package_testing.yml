@@ -11,8 +11,8 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: [3.7, 3.8, 3.9]
-        torch-version: [1.10.2, 1.11.0, 1.12.0]
+        python-version: [3.7, 3.8, 3.9, "3.10"]
+        torch-version: [1.11.0, 1.12.1, 1.13.0]
       fail-fast: false
 
     steps:
@@ -25,7 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Restore Ubuntu cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         if: matrix.operating-system == 'ubuntu-latest'
         with:
           path: ~/.cache/pip
@@ -33,7 +33,7 @@ jobs:
           restore-keys: ${{ matrix.os }}-${{ matrix.python-version }}-
 
       - name: Restore MacOS cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         if: matrix.operating-system == 'macos-latest'
         with:
           path: ~/Library/Caches/pip
@@ -41,7 +41,7 @@ jobs:
           restore-keys: ${{ matrix.os }}-${{ matrix.python-version }}-
 
       - name: Restore Windows cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         if: matrix.operating-system == 'windows-latest'
         with:
           path: ~\AppData\Local\pip\Cache
