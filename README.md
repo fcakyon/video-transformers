@@ -44,10 +44,11 @@ and supports:
 conda install pytorch=1.11.0 torchvision=0.12.0 cudatoolkit=11.3 -c pytorch
 ```
 
-- Install pytorchvideo from main branch:
+- Install pytorchvideo and transformers from main branch:
 
 ```bash
 pip install git+https://github.com/facebookresearch/pytorchvideo.git
+pip install git+https://github.com/huggingface/transformers.git
 ```
 
 - Install `video-transformers`:
@@ -83,7 +84,7 @@ val_root
     ...
 ```
 
-- Fine-tune CVT (from HuggingFace) + Transformer based video classifier:
+- Fine-tune Timesformer (from HuggingFace) video classifier:
 
 ```python
 from torch.optim import AdamW
@@ -95,7 +96,49 @@ from video_transformers.necks import TransformerNeck
 from video_transformers.trainer import trainer_factory
 from video_transformers.utils.file import download_ucf6
 
-backbone = TimeDistributed(TransformersBackbone("microsoft/cvt-13", num_unfrozen_stages=0))
+backbone = TransformersBackbone("facebook/timesformer-base-finetuned-k400", num_unfrozen_stages=1)
+
+download_ucf6("./")
+datamodule = VideoDataModule(
+    train_root="ucf6/train",
+    val_root="ucf6/val",
+    batch_size=4,
+    num_workers=4,
+    num_timesteps=8,
+    preprocess_input_size=224,
+    preprocess_clip_duration=1,
+    preprocess_means=backbone.mean,
+    preprocess_stds=backbone.std,
+    preprocess_min_short_side=256,
+    preprocess_max_short_side=320,
+    preprocess_horizontal_flip_p=0.5,
+)
+
+head = LinearHead(hidden_size=backbone.num_features, num_classes=datamodule.num_classes)
+model = VideoModel(backbone, head)
+
+optimizer = AdamW(model.parameters(), lr=1e-4)
+
+Trainer = trainer_factory("single_label_classification")
+trainer = Trainer(datamodule, model, optimizer=optimizer, max_epochs=8)
+
+trainer.fit()
+
+```
+
+- Fine-tune ConvNeXT (from HuggingFace) + Transformer based video classifier:
+
+```python
+from torch.optim import AdamW
+from video_transformers import TimeDistributed, VideoModel
+from video_transformers.backbones.transformers import TransformersBackbone
+from video_transformers.data import VideoDataModule
+from video_transformers.heads import LinearHead
+from video_transformers.necks import TransformerNeck
+from video_transformers.trainer import trainer_factory
+from video_transformers.utils.file import download_ucf6
+
+backbone = TimeDistributed(TransformersBackbone("facebook/convnext-small-224", num_unfrozen_stages=1))
 neck = TransformerNeck(
     num_features=backbone.num_features,
     num_timesteps=8,
@@ -137,18 +180,18 @@ trainer.fit()
 
 ```
 
-- Fine-tune MobileViT (from Timm) + GRU based video classifier:
+- Fine-tune Resnet18 (from HuggingFace) + GRU based video classifier:
 
 ```python
 from video_transformers import TimeDistributed, VideoModel
-from video_transformers.backbones.timm import TimmBackbone
+from video_transformers.backbones.transformers import TransformersBackbone
 from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
 from video_transformers.necks import GRUNeck
 from video_transformers.trainer import trainer_factory
 from video_transformers.utils.file import download_ucf6
 
-backbone = TimeDistributed(TimmBackbone("mobilevitv2_100", num_unfrozen_stages=0))
+backbone = TimeDistributed(TransformersBackbone("microsoft/resnet-18", num_unfrozen_stages=1))
 neck = GRUNeck(num_features=backbone.num_features, hidden_size=128, num_layers=2, return_last=True)
 
 download_ucf6("./")
@@ -188,7 +231,7 @@ from video_transformers import VideoModel
 
 model = VideoModel.from_pretrained(model_name_or_path)
 
-model.predict(video_path="video.mp4")
+model.predict(video_or_folder_path="video.mp4")
 >> [{'filename': "video.mp4", 'predictions': {'class1': 0.98, 'class2': 0.02}}]
 ```
 

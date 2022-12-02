@@ -67,6 +67,9 @@ jobs:
       - name: Install Pytorchvideo from main branch
         run: pip install git+https://github.com/facebookresearch/pytorchvideo.git
 
+      - name: Install HF/Transformers from main branch
+        run: pip install -U git+https://github.com/huggingface/transformers.git
+
       - name: Lint with flake8, black and isort
         run: |
           pip install .[dev]

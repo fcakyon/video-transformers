@@ -136,6 +136,43 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         )
 
     @classmethod
+    def from_transformers(cls, name_of_path: str, clip_duration: int = 2) -> "VideoModel":
+        """
+        Loads a model from a hf/transformers models.
+        """
+        import video_transformers
+        import video_transformers.data
+
+        from transformers import AutoConfig, AutoProcessor
+
+        processor = AutoProcessor.from_pretrained(name_of_path)
+        model_config = AutoConfig.from_pretrained(name_of_path)
+        labels = list(model_config.id2label.values())
+
+        video_preprocessor_config = {
+            "num_timesteps": model_config.num_frames,
+            "input_size": model_config.image_size,
+            "means": [0.45, 0.45, 0.45],
+            "stds": [0.225, 0.225, 0.225],
+            "min_short_side": model_config.image_size,
+            "max_short_side": model_config.image_size,
+            "horizontal_flip_p": 0,
+            "clip_duration": clip_duration,
+        }
+
+        backbone = video_transformers.AutoBackbone.from_transformers(name_of_path)
+        head = video_transformers.AutoHead.from_transformers(name_of_path)
+
+        return cls(
+            backbone=backbone,
+            head=head,
+            neck=None,
+            preprocessor_config=video_preprocessor_config,
+            labels=labels,
+            task="single_label_classification",
+        )
+
+    @classmethod
     def _from_pretrained(
         cls,
         model_id,
@@ -392,7 +429,7 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         x = self.head(x)
         return x
 
-    def predict(self, video_or_folder_path: Union[str, Path], mode) -> List[Dict]:
+    def predict(self, video_or_folder_path: Union[str, Path], mode: str = "first_clip") -> List[Dict]:
         """
         Predict the labels and probabilities of a video or folder of videos.
         Supports local file path/folder directory, S3 URI and https URL.
@@ -401,7 +438,7 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
             model: The model to use for prediction.
             video_or_folder_path: The path to the video or folder of videos.
                 Supports local file path/folder directory, S3 URI and https URL.
-            mode: The mode to use for prediction. Can be "first_batch", "average_all", "random_batch", "uniform_batch".
+            mode: The mode to use for prediction. Can be "first_clip", "average_all", "random_clip", "uniform_clip".
         """
         result = video_transformers.predict.predict(
             self,
@@ -413,3 +450,7 @@ class VideoModel(nn.Module, PyTorchModelHubMixin):
         )
 
         return result
+
+
+if __name__ == "__main__":
+    VideoModel.from_transformers("facebook/timesformer-base-finetuned-k600")

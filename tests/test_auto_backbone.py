@@ -38,6 +38,22 @@ class TestAutoBackbone(unittest.TestCase):
         output = backbone(input)
         self.assertEqual(output.shape, (batch_size, config["num_timesteps"], backbone.num_features))
 
+    def test_from_transformers(self):
+        from video_transformers import AutoBackbone
+
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-base-finetuned-k400")
+        assert backbone.model_name == "facebook/timesformer-base-finetuned-k400"
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-base-finetuned-k600")
+        assert backbone.model_name == "facebook/timesformer-base-finetuned-k600"
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-hr-finetuned-k400")
+        assert backbone.model_name == "facebook/timesformer-hr-finetuned-k400"
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-hr-finetuned-k600")
+        assert backbone.model_name == "facebook/timesformer-hr-finetuned-k600"
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-base-finetuned-ssv2")
+        assert backbone.model_name == "facebook/timesformer-base-finetuned-ssv2"
+        backbone = AutoBackbone.from_transformers("facebook/timesformer-hr-finetuned-ssv2")
+        assert backbone.model_name == "facebook/timesformer-hr-finetuned-ssv2"
+
 
 if __name__ == "__main__":
     unittest.main()
