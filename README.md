@@ -88,11 +88,10 @@ val_root
 
 ```python
 from torch.optim import AdamW
-from video_transformers import TimeDistributed, VideoModel
+from video_transformers import VideoModel
 from video_transformers.backbones.transformers import TransformersBackbone
 from video_transformers.data import VideoDataModule
 from video_transformers.heads import LinearHead
-from video_transformers.necks import TransformerNeck
 from video_transformers.trainer import trainer_factory
 from video_transformers.utils.file import download_ucf6
 
