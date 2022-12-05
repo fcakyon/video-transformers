@@ -71,7 +71,7 @@ jobs:
 
       - name: Install latest video-transformers package
         run: >
-          pip install --upgrade --force-reinstall video-transformers[test]
+          pip install -U video-transformers[test]
 
       - name: Unittest video-transformers
         run: |
