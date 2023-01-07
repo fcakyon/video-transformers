@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
