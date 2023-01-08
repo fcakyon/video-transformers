@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import torch
@@ -30,7 +30,7 @@ class BaseTrainer:
         mixed_precision: str = "no",
         output_dir: str = "runs",
         seed: int = 42,
-        trackers: list[GeneralTracker] = None,
+        trackers: List[GeneralTracker] = None,
         checkpoint_save: bool = True,
         checkpoint_save_interval: int = 1,
         checkpoint_save_policy: str = "epoch",
