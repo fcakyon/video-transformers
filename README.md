@@ -54,7 +54,7 @@ pip install git+https://github.com/huggingface/transformers.git
 - Install `video-transformers`:
 
 ```bash
-pip install video-transformers
+pip install git+https://github.com/fcakyon/video-transformers.git
 ```
 
 ## 🔥 Usage
